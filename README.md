@@ -1,5 +1,6 @@
 # GOTH MOMMY Radar Overhaul
 <img width="2496" height="2560" alt="imgonline-com-ua-twotoone-VqqXmlZtO2_(1) 1" src="https://github.com/user-attachments/assets/bbe42dcd-bae3-45e0-aa0d-65a7591a0ba9" />
+
 ## Description
 GOTH (Ground Over The Horizon) is a highly optimized, high-performance Harmony injection mod for Nuclear Option that drastically buffs AI SAM and ship-based radar detection systems, eliminating their inability to detect high-altitude threats at long ranges. 
 
