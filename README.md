@@ -2,9 +2,9 @@
 <img width="2496" height="2560" alt="imgonline-com-ua-twotoone-VqqXmlZtO2_(1) 1" src="https://github.com/user-attachments/assets/bbe42dcd-bae3-45e0-aa0d-65a7591a0ba9" />
 
 ## Description
-GOTH (Ground Over The Horizon) is a highly optimized, high-performance Harmony injection mod for Nuclear Option that drastically buffs AI SAM and ship-based radar detection systems, eliminating their inability to detect high-altitude threats at long ranges. 
+GOTH (Ground Over The Horizon) is a highly optimized, high-performance Harmony injection mod for Nuclear Option that drastically buffs radar detection systems, eliminating their inability to detect high-altitude threats at long ranges. 
 
-At the core of GOTH is the **Multi Orbital Mapping & Monitoring Yield (MOMMY)** sub-system. MOMMY dynamically adjusts the internal math of the vanilla radar engine, ensuring that surface-based air defense systems remain highly lethal over the horizon without causing exponential math errors or tanking framerates. Because sometimes, SAM sites just need their MOMMY to help them see.
+At the core of GOTH is the **Multi Orbital Mapping & Monitoring Yield (MOMMY)** sub-system. MOMMY dynamically adjusts the internal math of the vanilla radar engine, ensuring that both airborne and surface-based air defense systems remain highly lethal over the horizon without causing exponential math errors or tanking framerates. Because sometimes, SAM sites just need their MOMMY to help them see.
 
 ## How the Formula Works
 The Nuclear Option vanilla radar relies on a "Signal Strength" equation that mimics real-world physics (the 4th-root decay law). Normally, radar systems have a hardcoded `maxRange` and a `minSignal` threshold that prevents them from detecting distant targets regardless of altitude.
