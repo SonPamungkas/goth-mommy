@@ -31,8 +31,8 @@ GOTH intercepts the `CanSeeRadarReturn` function and applies a series of dynamic
    - `minSignal = Max(0.0001, (origMinSignal - RCS) / detectionMult)`
    - This ensures that high-altitude, large-RCS targets drop the detection threshold to near zero, guaranteeing the radar picks them up far beyond vanilla limits.
 
-## Performance Optimization
-GOTH is built for maximum frame rates. It uses zero-allocation Memory Pointers (`FieldRefAccess`) to directly manipulate the radar's physics struct without boxing/unboxing overhead, avoiding garbage collection (GC) stutter entirely. It completely eliminates hierarchy scans (`GetComponentInParent`) in the hot path.
+## Performance & Mod Optimization
+GOTH is built for maximum frame rates. It uses zero-allocation Memory Pointers (`FieldRefAccess`) to directly manipulate the radar's physics struct without boxing/unboxing overhead, avoiding garbage collection (GC) stutter entirely. It completely eliminates hierarchy scans (`GetComponentInParent`) in the hot path. With the added bonus of compatibility with any modded and future radar-emitting unit.
 
 ## Configuration
 By default, the mod runs silently for maximum performance. If you want to see the real-time math of every single radar ping:
