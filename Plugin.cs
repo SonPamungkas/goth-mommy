@@ -12,11 +12,17 @@ namespace GroundOverTheHorizon
     {
         public static ManualLogSource Log;
         public static ConfigEntry<bool> VerboseLogging;
+        public static ConfigEntry<float> MOMMY_VisualRange;
+        public static ConfigEntry<float> MOMMY_Magnification;
+        public static ConfigEntry<float> MOMMY_MaxSpeed;
 
         private void Awake()
         {
             Log = Logger;
             VerboseLogging = Config.Bind("Debug", "VerboseLogging", false, "Enable extreme logging for radar math (will impact performance).");
+            MOMMY_VisualRange = Config.Bind("MOMMY", "VisualRange", 50000f, "Visual range applied to all radar and ship units.");
+            MOMMY_Magnification = Config.Bind("MOMMY", "Magnification", 8f, "Magnification applied to all radar and ship units.");
+            MOMMY_MaxSpeed = Config.Bind("MOMMY", "MaxSpeed", 1f, "Max speed applied to all radar and ship units.");
 
             Log.LogInfo("Initializing GOTH Radar Logic (Multi Orbital Mapping & Monitoring Yield - MOMMY sub-system initialized)...");
             var harmony = new Harmony("com.groundoverthehorizon");
@@ -115,29 +121,37 @@ namespace GroundOverTheHorizon
         [HarmonyPostfix]
         static void Postfix()
         {
-            Plugin.Log.LogInfo("[MOMMY] Applying permanent visual detection stats to surface radar units...");
+            Plugin.Log.LogInfo("[MOMMY] Applying permanent visual detection stats to all radar and ship units...");
             
             foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
             {
                 // Only look at root prefabs
                 if (go.scene.IsValid() || go.transform.parent != null) continue;
                 
-                if (go.name == "HLT-R" || go.name == "Truck2-R")
+                // Check if the prefab is a radar-emitting unit or a ship
+                bool isRadarOrShip = go.GetComponentInChildren<Radar>(true) != null || go.GetComponent("Ship") != null || go.GetComponentInChildren(AccessTools.TypeByName("Ship"), true) != null;
+                
+                if (isRadarOrShip)
                 {
-                    var td = go.GetComponentInChildren<TargetDetector>(true);
-                    if (td != null)
+                    var targetDetectors = go.GetComponentsInChildren<TargetDetector>(true);
+                    bool upgraded = false;
+                    
+                    foreach (var td in targetDetectors)
                     {
                         var type = td.GetType();
                         
                         var vrField = AccessTools.Field(type, "visualRange");
-                        if (vrField != null) vrField.SetValue(td, 50000f);
+                        if (vrField != null) { vrField.SetValue(td, Plugin.MOMMY_VisualRange.Value); upgraded = true; }
                         
                         var magField = AccessTools.Field(type, "magnification");
-                        if (magField != null) magField.SetValue(td, 8f);
+                        if (magField != null) { magField.SetValue(td, Plugin.MOMMY_Magnification.Value); upgraded = true; }
                         
                         var msField = AccessTools.Field(type, "maxSpeed");
-                        if (msField != null) msField.SetValue(td, 1f);
-                        
+                        if (msField != null) { msField.SetValue(td, Plugin.MOMMY_MaxSpeed.Value); upgraded = true; }
+                    }
+                    
+                    if (upgraded)
+                    {
                         Plugin.Log.LogInfo($"[MOMMY] Successfully upgraded optics for {go.name}.");
                     }
                 }
