@@ -40,6 +40,10 @@ namespace GroundOverTheHorizon
         private static readonly AccessTools.FieldRef<Radar, RadarParams> RadarParamsRef =
             AccessTools.FieldRefAccess<Radar, RadarParams>("RadarParameters");
             
+        // FieldRef for TargetDetector.visualRange
+        private static readonly AccessTools.FieldRef<TargetDetector, float> VisualRangeRef =
+            AccessTools.FieldRefAccess<TargetDetector, float>("visualRange");
+            
         private static FieldInfo _targetUnitField;
 
         // 1. PREFIX: Runs BEFORE the vanilla math. We inject our multipliers here.
@@ -102,6 +106,42 @@ namespace GroundOverTheHorizon
 
             // Return true allows the vanilla method to run, naturally applying Clutter, Doppler, and Jamming
             return true; 
+        }
+    }
+
+    [HarmonyPatch(typeof(Encyclopedia), "AfterLoad", new System.Type[0])]
+    public static class EncyclopediaAfterLoadPatch
+    {
+        [HarmonyPostfix]
+        static void Postfix()
+        {
+            Plugin.Log.LogInfo("[MOMMY] Applying permanent visual detection stats to surface radar units...");
+            
+            foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
+            {
+                // Only look at root prefabs
+                if (go.scene.IsValid() || go.transform.parent != null) continue;
+                
+                if (go.name == "HLT-R" || go.name == "Truck2-R")
+                {
+                    var td = go.GetComponentInChildren<TargetDetector>(true);
+                    if (td != null)
+                    {
+                        var type = td.GetType();
+                        
+                        var vrField = AccessTools.Field(type, "visualRange");
+                        if (vrField != null) vrField.SetValue(td, 50000f);
+                        
+                        var magField = AccessTools.Field(type, "magnification");
+                        if (magField != null) magField.SetValue(td, 8f);
+                        
+                        var msField = AccessTools.Field(type, "maxSpeed");
+                        if (msField != null) msField.SetValue(td, 1f);
+                        
+                        Plugin.Log.LogInfo($"[MOMMY] Successfully upgraded optics for {go.name}.");
+                    }
+                }
+            }
         }
     }
 }
