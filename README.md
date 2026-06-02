@@ -32,7 +32,7 @@ GOTH intercepts the `CanSeeRadarReturn` function and applies a series of dynamic
    - `minSignal = origMinSignal / lockMult`
    - This ensures that large-RCS targets drop the detection threshold, guaranteeing the radar picks them up far beyond vanilla limits.
 
-## Universal Optics Upgrade
+## Ground Radar Emulation
 MOMMY automatically scans every single radar-emitting unit and ship on startup, forcefully injecting configurable visual optics (Visual Range, Magnification, Max Speed) directly into their TargetDetectors. This makes surface radar units inherently capable of tracking low-flying or non-radar units at immense distances without relying on aircraft EOTS.
 
 ## Performance & Mod Optimization
