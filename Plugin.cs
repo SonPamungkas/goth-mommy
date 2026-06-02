@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace GroundOverTheHorizon
 {
-    [BepInPlugin("com.groundoverthehorizon", "GOTH", "1.0")]
+    [BepInPlugin("com.goth.mommy", "GOTH", "1.2")]
     public class Plugin : BaseUnityPlugin
     {
         public static ManualLogSource Log;
@@ -25,12 +25,12 @@ namespace GroundOverTheHorizon
             MOMMY_MaxSpeed = Config.Bind("MOMMY", "MaxSpeed", 1f, "Max speed applied to all radar and ship units.");
 
             Log.LogInfo("Initializing GOTH Radar Logic (Multi Orbital Mapping & Monitoring Yield - MOMMY sub-system initialized)...");
-            var harmony = new Harmony("com.groundoverthehorizon");
+            var harmony = new Harmony("com.goth.mommy");
             
             try
             {
                 harmony.PatchAll();
-                Log.LogInfo("GOTH 1.0 patched successfully. VerboseLogging is " + (VerboseLogging.Value ? "ENABLED" : "DISABLED") + ".");
+                Log.LogInfo("GOTH 1.2 patched successfully. VerboseLogging is " + (VerboseLogging.Value ? "ENABLED" : "DISABLED") + ".");
             }
             catch (System.Exception e)
             {
