@@ -91,12 +91,12 @@ namespace GroundOverTheHorizon
             float origMaxRange = p.maxRange;
             float origMinSignal = p.minSignal;
 
-            // 1. Boost the maximum range
-            p.maxRange = origMaxRange * detectionMult * lockMult;
+            // 1. Boost the maximum range using target altitude, RCS, and emitter altitude
+            float emitterAlt = Mathf.Max(0f, __instance.transform.position.y);
+            p.maxRange = origMaxRange * detectionMult * lockMult * (1.0f + Mathf.Log10(emitterAlt + 1f));
             
-            // 2. Aggressive MinSignal Reduction (Direct 1:1 Subtraction) Clamped at 0.0001
-            // 3. Further reduce MinSignal based on high-altitude multiplier
-            p.minSignal = Mathf.Max(0.0001f, origMinSignal - rcs) / detectionMult;
+            // 2. Further reduce MinSignal based on high-altitude multiplier
+            p.minSignal = origMinSignal / lockMult;
 
             // THE LOGGER: Gated behind verbose config to prevent massive IO lag and string allocations
             if (Plugin.VerboseLogging.Value)
