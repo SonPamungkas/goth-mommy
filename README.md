@@ -35,13 +35,25 @@ GOTH intercepts the `CanSeeRadarReturn` function and applies a series of dynamic
 ## Ground Radar Emulation
 MOMMY automatically scans every single radar-emitting unit and ship on startup, forcefully injecting configurable visual optics (Visual Range, Magnification, Max Speed) directly into their TargetDetectors. This makes surface radar units inherently capable of tracking low-flying or non-radar units at immense distances without relying on aircraft EOTS.
 
-## Performance & Mod Optimization
-GOTH is built for maximum frame rates. It uses zero-allocation Memory Pointers (`FieldRefAccess`) to directly manipulate the radar's physics struct without boxing/unboxing overhead, avoiding garbage collection (GC) stutter entirely. It completely eliminates hierarchy scans (`GetComponentInParent`) in the hot path. With the added bonus of compatibility with any modded and future radar-emitting unit.
+## Features
 
-## Configuration
-By default, the mod gives all surface radars a 50km optical range and runs the math silently for maximum performance. If you want to customize the values:
-1. Run the game once to generate the config file.
-2. Open `BepInEx/config/com.groundoverthehorizon.cfg`.
-3. Tweak the global optics values (`VisualRange`, `Magnification`, `MaxSpeed`) to your liking.
-4. Set `VerboseLogging = true` to see the real-time math of every radar ping.
-5. Check your BepInEx console for detailed `[MOMMY]` logs.
+- **Atmospheric Refraction & Over-The-Horizon Radar:**
+  - Tropospheric 4/3 effective Earth radius geometry extending radar sight beyond geometric horizons.
+  - RCS diffraction slope calculations allowing large targets to be detected beyond line-of-sight based on radar cross-section.
+  - Broad spatial envelope search expansion up to 250km.
+  - Zero-allocation, non-mutating signal strength evaluation.
+
+- **Universal Optics Injection:**
+  - Upgraded visual detection optics (visual range up to 50km, 8x magnification, 1 m/s target speed threshold) directly injected into surface radar and warship units on spawn.
+
+- **Over-The-Horizon Naval Bombardment:**
+  - Long-range engagement up to 120km without direct line-of-sight requirements for heavy naval cannons and railguns.
+  - Unified 2000 m/s exit velocity for ship-launched guided shells and bombardment cannons.
+  - Dynamic 45-degree high-angle elevation capping for guided shells (< 100mm) engaging beyond 50km for maximum ballistic reach.
+  - Caliber filtering (>= 100mm) ensuring heavy land artillery (SPGs) receives long-range capabilities while medium calibre remain vanilla.
+
+- **Smart SAM Defense & Exact Quota Ripple Salvo:**
+  - **3-Slot Seeker Discrimination:** Enforces independent Fox 1 (SARH), Fox 2 (IR), and Fox 3 (ARH) seeker slots per target. Prevents redundant missile dumping of the same seeker type.
+  - **Self & Buddy Point Defense Trigger:** Emergency salvo multilock only activates if incoming missiles threaten the platform or an allied surface unit within 100m. Aerial engagements remain 100% vanilla.
+  - **Exact Quota Ripple Fire:** Dynamically counts incoming threats ($N$) and fires exactly $N$ interceptors sequentially at 0.25s cadence. Firing immediately halts once all threats are engaged, preserving ammunition.
+  - **Anti-Daisy-Chain Guardrails:** Pure anti-air interceptors are excluded from trajectory checks, preventing opposing SAM sites from triggering mutual missile-wasting duels.
