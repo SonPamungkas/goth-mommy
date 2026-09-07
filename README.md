@@ -35,6 +35,8 @@ GOTH intercepts the `CanSeeRadarReturn` function and applies a series of dynamic
 ## Ground Radar Emulation
 MOMMY automatically scans every single radar-emitting unit and ship on startup, forcefully injecting configurable visual optics (Visual Range, Magnification, Max Speed) directly into their TargetDetectors. This makes surface radar units inherently capable of tracking low-flying or non-radar units at immense distances without relying on aircraft EOTS.
 
+![1000182621](https://github.com/user-attachments/assets/64856022-cb48-407c-b1ff-9ee2c355078a)
+
 ## Features
 
 - **Atmospheric Refraction & Over-The-Horizon Radar:**
