@@ -7,9 +7,16 @@ using NuclearOption.Jobs;
 using UnityEngine;
 namespace GroundOverTheHorizon
 {
-    [BepInPlugin("neutral.gothmommy", "GOTH MOMMY", "2.0.0")]
+    [BepInPlugin("neutral.gothmommy", "GOTH MOMMY", "2.0.1")]
     public class Plugin : BaseUnityPlugin
     {
+        private const string S_GENERAL = "General";
+        private const string S_RADAR = "Radar";
+        private const string S_OPTICS = "Optics";
+        private const string S_NAVAL_BOMBARDMENT = "NavalBombardment";
+        private const string S_GROUND_BALLISTICS = "GroundBallistics";
+        private const string S_SAM_DEFENSE = "SAMDefense";
+        private const string S_ARH_BUFF = "ARHBuff";
         public static ManualLogSource Log;
         public static ConfigEntry<bool> EnableGoth;
         public static ConfigEntry<bool> VerboseLogging;
@@ -22,131 +29,127 @@ namespace GroundOverTheHorizon
         public static ConfigEntry<float> MOMMY_Magnification;
         public static ConfigEntry<float> MOMMY_MaxSpeed;
         public static ConfigEntry<bool> Bombardment_Enable;
-        public static ConfigEntry<bool> Bombardment_UncappedRange;
-        public static ConfigEntry<bool> Bombardment_UnifyShipVelocity;
         public static ConfigEntry<float> Bombardment_ShipExitVelocity;
         public static ConfigEntry<bool> Bombardment_PrioritizeSurface;
         public static ConfigEntry<float> Bombardment_SelfDestructUncap;
-        public static ConfigEntry<bool> Bombardment_SuppressKineticProximityFuse;
         public static ConfigEntry<bool> Bombardment_GuidedShell45Elevation;
-        public static ConfigEntry<float> Bombardment_GuidedShell45Threshold;
-        public static ConfigEntry<float> Bombardment_GuidedShellMaxDiameterFor45;
         public static ConfigEntry<float> Bombardment_MinCaliberNonNaval;
-        public static ConfigEntry<bool> Bombardment_DebugLog;
         public static ConfigEntry<bool> Ground_BallisticRangeCap_Enable;
-        public static ConfigEntry<bool> Ground_DebugLog;
         public static ConfigEntry<bool> SAM_EnableCoordinator;
-        public static ConfigEntry<bool> SAM_CapFox1_SARH;
-        public static ConfigEntry<bool> SAM_CapFox2_IR;
-        public static ConfigEntry<bool> SAM_CapFox3_ARH;
-        public static ConfigEntry<float> SAM_AircraftCooldownSeconds;
-        public static ConfigEntry<float> SAM_MissileCooldownSeconds;
-        public static ConfigEntry<float> SAM_TerminalSelfDefenseDistance;
-        public static ConfigEntry<bool> SAM_RapidFire_Fox2Fox3_Enable;
-        public static ConfigEntry<float> SAM_Fox2_FireInterval;
-        public static ConfigEntry<float> SAM_Fox3_FireInterval;
         public static ConfigEntry<float> SAM_MissileSalvoInterval;
-        public static ConfigEntry<float> SAM_BuddyDefenseRadius;
+        public static ConfigEntry<float> SAM_BuddyDefenseRadius_Ship;
+        public static ConfigEntry<float> SAM_BuddyDefenseRadius_VehicleOrBuilding;
+        public static ConfigEntry<float> SAM_ThreatReengageCooldown;
         public static ConfigEntry<bool> SAM_RapidFire_SurfaceAndNavalOnly;
-        public static ConfigEntry<float> SAM_FireControl_AirDefenseSalvoInterval;
-        public static ConfigEntry<float> SAM_FireControl_AirDefenseAssessmentInterval;
+        public static ConfigEntry<float> SAM_Ripple_LockTime;
         public static ConfigEntry<bool> SAM_DebugLog;
-        public static ConfigEntry<bool> Bombardment_DoubleMuzzleVelocity => Bombardment_UnifyShipVelocity;
-        public static ConfigEntry<float> Bombardment_MuzzleVelocityMultiplier => Bombardment_ShipExitVelocity;
+        public static ConfigEntry<bool> SAM_TraceEveryCall;
+        public static ConfigEntry<float> SAM_TraceThrottle;
+        public static ConfigEntry<float> ARH_ClutterFactorScale;
+        public static ConfigEntry<float> ARH_TerminalRangeMultiplier;
+        public static bool SamDbg => SAM_DebugLog != null && SAM_DebugLog.Value;
+        public static bool SamTrace => SAM_TraceEveryCall != null && SAM_TraceEveryCall.Value;
         private void Awake()
         {
             Log = Logger;
-            EnableGoth = Config.Bind("General", "Enable", true,
+            EnableGoth = Config.Bind(S_GENERAL, "Enable", true,
                 "Master switch for GOTH MOMMY radar and horizon overhaul.");
-            VerboseLogging = Config.Bind("General", "VerboseLogging", false,
+            VerboseLogging = Config.Bind(S_GENERAL, "VerboseLogging", false,
                 "Enable verbose diagnostic logging for radar calculations (rate-limited).");
-            Radar_EnableOTH = Config.Bind("Radar", "EnableOTH", true,
+            Radar_EnableOTH = Config.Bind(S_RADAR, "EnableOTH", true,
                 "Enables over-the-horizon tropospheric refraction (4/3 effective Earth radius) and RCS diffraction detection.");
-            RefractionFactor = Config.Bind("Radar", "RefractionFactor", 1.3333333f,
+            RefractionFactor = Config.Bind(S_RADAR, "RefractionFactor", 1.3333333f,
                 "Tropospheric atmospheric refraction multiplier for effective Earth radius (standard 4/3 Earth radius = 1.3333).");
-            SensitivityFactor = Config.Bind("Radar", "SensitivityFactor", 0.03f,
+            SensitivityFactor = Config.Bind(S_RADAR, "SensitivityFactor", 0.03f,
                 "Over-the-horizon diffraction slope sensitivity based on target RCS.");
-            MaxRadarRangeCap = Config.Bind("Radar", "MaxRadarRangeCap", 250000f,
+            MaxRadarRangeCap = Config.Bind(S_RADAR, "MaxRadarRangeCap", 250000f,
                 "Maximum broad spatial search radius for radars in meters (250km).");
-            MOMMY_OpticsUpgrade_Enable = Config.Bind("Optics", "OpticsUpgrade_Enable", true,
+            MOMMY_OpticsUpgrade_Enable = Config.Bind(S_OPTICS, "OpticsUpgrade_Enable", true,
                 "Inject upgraded visual detection optics into surface radar and ship units.");
-            MOMMY_VisualRange = Config.Bind("Optics", "VisualRange", 50000f,
+            MOMMY_VisualRange = Config.Bind(S_OPTICS, "VisualRange", 50000f,
                 "Visual range applied to radar and ship units.");
-            MOMMY_Magnification = Config.Bind("Optics", "Magnification", 8f,
+            MOMMY_Magnification = Config.Bind(S_OPTICS, "Magnification", 8f,
                 "Magnification applied to radar and ship units.");
-            MOMMY_MaxSpeed = Config.Bind("Optics", "MaxSpeed", 1f,
+            MOMMY_MaxSpeed = Config.Bind(S_OPTICS, "MaxSpeed", 1f,
                 "Max speed threshold applied to radar and ship units.");
-            Bombardment_Enable = Config.Bind("NavalBombardment", "Enable", true,
+            Bombardment_Enable = Config.Bind(S_NAVAL_BOMBARDMENT, "Enable", true,
                 "Enable over-the-horizon naval bombardment for railguns and guided-shell ship cannons.");
-            Bombardment_UncappedRange = Config.Bind("NavalBombardment", "UncappedRange", true,
-                "Extend maximum targeting range to 120km and remove line-of-sight requirements on bombardment weapons.");
-            Bombardment_UnifyShipVelocity = Config.Bind("NavalBombardment", "UnifyShipVelocity", true,
-                "Unify all ship-launched guided shell and naval cannon exit velocities to a single standard (2000 m/s).");
-            Bombardment_ShipExitVelocity = Config.Bind("NavalBombardment", "ShipExitVelocity", 2000f,
+            Bombardment_ShipExitVelocity = Config.Bind(S_NAVAL_BOMBARDMENT, "ShipExitVelocity", 2000f,
                 "Unified exit velocity in m/s for all ship-launched guided shells and naval bombardment cannons (default 2000 m/s).");
-            Bombardment_PrioritizeSurface = Config.Bind("NavalBombardment", "PrioritizeSurface", true,
+            Bombardment_PrioritizeSurface = Config.Bind(S_NAVAL_BOMBARDMENT, "PrioritizeSurface", true,
                 "Prevent main bombardment turrets from targeting fast incoming missiles, keeping them focused on surface ships and ground targets.");
-            Bombardment_SelfDestructUncap = Config.Bind("NavalBombardment", "SelfDestructUncap", 300f,
+            Bombardment_SelfDestructUncap = Config.Bind(S_NAVAL_BOMBARDMENT, "SelfDestructUncap", 300f,
                 "Overrides the bullet self-destruct timer on bombardment cannons to allow long-range flight without mid-air airbursts.");
-            Bombardment_SuppressKineticProximityFuse = Config.Bind("NavalBombardment", "SuppressKineticProximityFuse", true,
-                "Disables proximity airburst fuses on heavy armor-piercing naval shells, forcing direct impact.");
-            Bombardment_GuidedShell45Elevation = Config.Bind("NavalBombardment", "GuidedShell45Elevation", true,
+            Bombardment_GuidedShell45Elevation = Config.Bind(S_NAVAL_BOMBARDMENT, "GuidedShell45Elevation", true,
                 "Force 45 degree elevation for ship-launched guided shells and naval cannons when target is beyond 50km for maximum ballistic reach.");
-            Bombardment_GuidedShell45Threshold = Config.Bind("NavalBombardment", "GuidedShell45Threshold", 50000f,
-                "Distance threshold in meters (default 50000 = 50km) beyond which ship guided shells are forced to 45 degree elevation.");
-            Bombardment_GuidedShellMaxDiameterFor45 = Config.Bind("NavalBombardment", "GuidedShellMaxDiameterFor45", 0.1f,
-                "Maximum shell diameter in meters (default 0.1 = 100mm) to which the 45 degree elevation capping is applied. Shells with diameter >= this threshold remain completely vanilla.");
-            Bombardment_MinCaliberNonNaval = Config.Bind("NavalBombardment", "MinCaliberNonNaval", 0.1f,
+            Bombardment_MinCaliberNonNaval = Config.Bind(S_NAVAL_BOMBARDMENT, "MinCaliberNonNaval", 0.1f,
                 "Minimum projectile caliber in meters (default 0.1 = 100mm) required for non-naval (ground) units to receive the 2000 m/s velocity buff and 120km engagement boost. Prevents light ground mortars (< 100mm) from firing at Mach 5 while allowing heavy SPGs and artillery to receive full buffs.");
-            Bombardment_DebugLog = Config.Bind("NavalBombardment", "DebugLog", false,
-                "Log naval bombardment targeting and firing solutions.");
-            Ground_BallisticRangeCap_Enable = Config.Bind("GroundBallistics", "BallisticRangeCap_Enable", true,
+            Ground_BallisticRangeCap_Enable = Config.Bind(S_GROUND_BALLISTICS, "BallisticRangeCap_Enable", true,
                 "Restricts ground artillery, howitzers, and direct-fire vehicles to their true physical ballistic limit instead of 120km.");
-            Ground_DebugLog = Config.Bind("GroundBallistics", "DebugLog", false,
-                "Log ground artillery ballistic envelope evaluations.");
-            SAM_EnableCoordinator = Config.Bind("SAMDefense", "EnableCoordinator", true,
-                "Master switch for smart air defense salvo allocation, fleet-wide deconfliction, and rapid fire.");
-            SAM_CapFox1_SARH = Config.Bind("SAMDefense", "CapFox1_SARH", true,
-                "Gate: Limits incoming Fox-1 (SARH) missiles to at most 1 per aerial target across the fleet.");
-            SAM_CapFox2_IR = Config.Bind("SAMDefense", "CapFox2_IR", true,
-                "Gate: Limits incoming Fox-2 (IR) missiles to at most 1 per aerial target across the fleet (prevents fleet IRM dumping).");
-            SAM_CapFox3_ARH = Config.Bind("SAMDefense", "CapFox3_ARH", true,
-                "Gate: Limits incoming Fox-3 (ARH) missiles to at most 1 per aerial target across the fleet.");
-            SAM_AircraftCooldownSeconds = Config.Bind("SAMDefense", "AircraftCooldownSeconds", 3.0f,
-                "Battle damage assessment cooldown in seconds after missile termination/flaring before an aircraft can be targeted again by that seeker type (bypassed < terminal self-defense distance).");
-            SAM_MissileCooldownSeconds = Config.Bind("SAMDefense", "MissileCooldownSeconds", 0.0f,
-                "Cooldown in seconds after missile termination before a threat missile target can be re-engaged (0 = instant re-engagement).");
-            SAM_TerminalSelfDefenseDistance = Config.Bind("SAMDefense", "TerminalSelfDefenseDistance", 10000f,
-                "Distance in meters (default 10km) within which aircraft BDA cooldown is bypassed for emergency point defense.");
-            SAM_RapidFire_Fox2Fox3_Enable = Config.Bind("SAMDefense", "RapidFire_Fox2Fox3_Enable", true,
-                "Increases fire rate of surface and naval Fox-2 (IR) and Fox-3 (ARH) multi-cell launchers to counter threat salvos.");
-            SAM_Fox2_FireInterval = Config.Bind("SAMDefense", "Fox2_FireInterval", 0.25f,
-                "Minimum fire interval in seconds between successive launches from surface/naval Fox-2 (IR) launchers (e.g., Andromeda WS0 IRM-S2).");
-            SAM_Fox3_FireInterval = Config.Bind("SAMDefense", "Fox3_FireInterval", 0.35f,
-                "Minimum fire interval in seconds between successive launches from surface/naval Fox-3 (ARH) launchers (e.g., NL-98, MRM-S4).");
-            SAM_MissileSalvoInterval = Config.Bind("SAMDefense", "MissileSalvoInterval", 0.25f,
-                "Minimum fire interval in seconds between successive launches when engaging incoming threat missiles (default 0.25s).");
-            SAM_BuddyDefenseRadius = Config.Bind("SAMDefense", "BuddyDefenseRadius", 100f,
-                "Defense radius in meters around a surface/naval air defense platform (default 100m) to defend allied surface units and trigger emergency multilock SAM salvo mode when incoming missiles are detected.");
-            SAM_RapidFire_SurfaceAndNavalOnly = Config.Bind("SAMDefense", "RapidFire_SurfaceAndNavalOnly", true,
-                "Restricts rapid fire rate exclusively to surface units and naval warships (aircraft dogfighters remain vanilla).");
-            SAM_FireControl_AirDefenseSalvoInterval = Config.Bind("SAMDefense", "FireControl_AirDefenseSalvoInterval", 0.25f,
-                "Overrides FireControl.salvoInterval for air defense salvos containing Fox-2/Fox-3 missiles, ensuring rapid sequential launch.");
-            SAM_FireControl_AirDefenseAssessmentInterval = Config.Bind("SAMDefense", "FireControl_AirDefenseAssessmentInterval", 1.5f,
-                "Reduces targetAssessmentInterval from vanilla 30s to 1.5s when air defense launchers are present.");
-            SAM_DebugLog = Config.Bind("SAMDefense", "DebugLog", false,
-                "Log smart SAM salvo allocation, rapid fire events, and target tuning.");
+            SAM_EnableCoordinator = Config.Bind(S_SAM_DEFENSE, "EnableCoordinator", true,
+                "Master switch for smart air defense salvo allocation, fleet-wide deconfliction, and threat pacing.");
+            SAM_MissileSalvoInterval = Config.Bind(S_SAM_DEFENSE, "MissileSalvoInterval", 0.1f,
+                "Minimum fire interval in seconds between successive launches when engaging incoming threat missiles (default 0.1s).");
+            SAM_ThreatReengageCooldown = Config.Bind(S_SAM_DEFENSE, "ThreatReengageCooldown", 3.0f,
+                "Minimum seconds before the same incoming threat may be engaged again. Mirrors the per-threat cooldown in the ImprovedAI peer mod. Stops a threat being re-bought every time slot bookkeeping blinks. Zero disables it.");
+            SAM_BuddyDefenseRadius_Ship = Config.Bind(S_SAM_DEFENSE, "BuddyDefenseRadius_Ship", 10000f,
+                "Defense radius in meters around a Ship air defense platform (default 10000m) to defend allied surface units and trigger emergency multilock SAM salvo mode when incoming missiles are detected.");
+            SAM_BuddyDefenseRadius_VehicleOrBuilding = Config.Bind(S_SAM_DEFENSE, "BuddyDefenseRadius_VehicleOrBuilding", 50000f,
+                "Defense radius in meters around a GroundVehicle/Building air defense platform (default 50000m) to defend allied surface units and trigger emergency multilock SAM salvo mode when incoming missiles are detected.");
+            SAM_RapidFire_SurfaceAndNavalOnly = Config.Bind(S_SAM_DEFENSE, "RapidFire_SurfaceAndNavalOnly", true,
+                "Restricts SAM salvo pacing exclusively to surface units and naval warships (aircraft dogfighters remain vanilla).");
+            SAM_Ripple_LockTime = Config.Bind(S_SAM_DEFENSE, "Ripple_LockTime", 0.1f,
+                "Turret.lockTime (seconds of tracking required before a SAM missile turret may fire) while its unit is threatened. Vanilla lockTime is otherwise untouched by RippleSam's other speed-ups. CIWS guns get their own unconditional lockTime reduction independently, via GothAirDefense.cs. Reverts to vanilla lockTime the instant the threat clears.");
+            SAM_DebugLog = Config.Bind(S_SAM_DEFENSE, "DebugLog", false,
+                "Log smart SAM salvo allocation, threat pacing events, and target tuning. Every gate reports why it allowed or refused, and every missile is logged with its SLine colour class so the log can be counted against the map.");
+            SAM_TraceEveryCall = Config.Bind(S_SAM_DEFENSE, "TraceEveryCall", false,
+                "FIREHOSE. Logs every call to the per-tick gates in Turret.FixedUpdate and WeaponStation.Ready, for every turret, every physics tick. Writes hundreds of MB to Player.log and costs frame rate. Intended for flights of a few seconds when a gate cannot be explained any other way. Requires DebugLog.");
+            SAM_TraceThrottle = Config.Bind(S_SAM_DEFENSE, "TraceThrottle", 1.0f,
+                "Minimum seconds between repeats of the same throttled diagnostic line on the per-tick paths. State changes always log immediately regardless of this. Zero logs every evaluation.");
+            ARH_ClutterFactorScale = Config.Bind(S_ARH_BUFF, "ClutterFactorScale", 0.5f,
+                "Scales ARHSeeker's radar clutterFactor down by this fraction at missile Initialize (default 0.5 = half strength), softening the ground-clutter signal penalty that causes lock loss against low-altitude targets.");
+            ARH_TerminalRangeMultiplier = Config.Bind(S_ARH_BUFF, "TerminalRangeMultiplier", 2.0f,
+                "Multiplies ARHSeeker's terminalRange (the range at which it switches from datalink to active radar terminal homing) at missile Initialize (default 2.0 = double, e.g. 12000m -> 24000m).");
             Log.LogInfo("Initializing GOTH MOMMY 2.0 (Multi Orbital Mapping & Monitoring Yield)...");
             var harmony = new Harmony("neutral.gothmommy");
             try
             {
                 harmony.PatchAll();
                 Log.LogInfo("GOTH MOMMY 2.0 patched successfully. Zero-allocation non-mutating pipeline active.");
+                ReportPatchStatus(harmony);
             }
             catch (System.Exception e)
             {
                 Log.LogError($"GOTH MOMMY failed to patch: {e}");
             }
+        }
+        private static void ReportPatchStatus(Harmony harmony)
+        {
+            string[] expected =
+            {
+                "Turret.FixedUpdate", "Turret.AssessTargetPriority", "Turret.ChooseTarget",
+                "MissileLauncher.Fire",
+                "Spawner.SpawnMissile", "Missile.TargetIDChanged",
+                "Missile.Detonate", "Missile.UnitDisabled"
+            };
+            var found = new HashSet<string>();
+            foreach (var m in harmony.GetPatchedMethods())
+            {
+                if (m == null || m.DeclaringType == null) continue;
+                found.Add(m.DeclaringType.Name + "." + m.Name);
+            }
+            int ok = 0;
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (found.Contains(expected[i])) ok++;
+                else Log.LogWarning($"{GothLog.Tag} PATCH MISSING: {expected[i]} is NOT patched. That patch is inert this session.");
+            }
+            Log.LogInfo($"{GothLog.Tag} Patch status: {ok}/{expected.Length} SAM targets bound. Total methods patched by this plugin: {found.Count}.");
+            if (ok == expected.Length)
+            {
+                Log.LogInfo(GothLog.Tag + " All SAM patches bound. If the battery still does nothing, the cause is a gate, not a patch.");
+            }
+            Log.LogInfo($"{GothLog.Tag} DebugLog={SamDbg} TraceEveryCall={SamTrace} EnableGoth={(EnableGoth != null && EnableGoth.Value)} EnableCoordinator={(SAM_EnableCoordinator != null && SAM_EnableCoordinator.Value)}");
         }
     }
     [HarmonyPatch(typeof(DetectorManager), "RequestRadarCheck")]
@@ -203,10 +206,8 @@ namespace GroundOverTheHorizon
     [HarmonyPatch(typeof(Radar), "RadarCheck")]
     public static class Radar_RadarCheck_Patch
     {
-        private static readonly AccessTools.FieldRef<Radar, float> RadarConeRef =
-            AccessTools.FieldRefAccess<Radar, float>("radarCone");
-        private static readonly AccessTools.FieldRef<TargetDetector, Unit> AttachedUnitRef =
-            AccessTools.FieldRefAccess<TargetDetector, Unit>("attachedUnit");
+        private static readonly AccessTools.FieldRef<Radar, float> RadarConeRef = AccessTools.FieldRefAccess<Radar, float>("radarCone");
+        private static readonly AccessTools.FieldRef<TargetDetector, Unit> AttachedUnitRef = AccessTools.FieldRefAccess<TargetDetector, Unit>("attachedUnit");
         [HarmonyPrefix]
         public static bool Prefix(Radar __instance)
         {
@@ -303,12 +304,9 @@ namespace GroundOverTheHorizon
     [HarmonyPatch(typeof(TargetDetector), "Awake")]
     public static class TargetDetector_Awake_Patch
     {
-        private static readonly AccessTools.FieldRef<TargetDetector, float> VisualRangeRef =
-            AccessTools.FieldRefAccess<TargetDetector, float>("visualRange");
-        private static readonly AccessTools.FieldRef<TargetDetector, float> MagnificationRef =
-            AccessTools.FieldRefAccess<TargetDetector, float>("magnification");
-        private static readonly AccessTools.FieldRef<TargetDetector, float> MaxSpeedRef =
-            AccessTools.FieldRefAccess<TargetDetector, float>("maxSpeed");
+        private static readonly AccessTools.FieldRef<TargetDetector, float> VisualRangeRef = AccessTools.FieldRefAccess<TargetDetector, float>("visualRange");
+        private static readonly AccessTools.FieldRef<TargetDetector, float> MagnificationRef = AccessTools.FieldRefAccess<TargetDetector, float>("magnification");
+        private static readonly AccessTools.FieldRef<TargetDetector, float> MaxSpeedRef = AccessTools.FieldRefAccess<TargetDetector, float>("maxSpeed");
         [HarmonyPostfix]
         public static void Postfix(TargetDetector __instance)
         {
