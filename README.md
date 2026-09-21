@@ -38,7 +38,6 @@ MOMMY automatically scans every single radar-emitting unit and ship on startup, 
 ![1000182621](https://github.com/user-attachments/assets/64856022-cb48-407c-b1ff-9ee2c355078a)
 
 ## Features
-
 - **Atmospheric Refraction & Over-The-Horizon Radar:**
   - Tropospheric 4/3 effective Earth radius geometry extending radar sight beyond geometric horizons.
   - RCS diffraction slope calculations allowing large targets to be detected beyond line-of-sight based on radar cross-section.
@@ -49,13 +48,21 @@ MOMMY automatically scans every single radar-emitting unit and ship on startup, 
   - Upgraded visual detection optics (visual range up to 50km, 8x magnification, 1 m/s target speed threshold) directly injected into surface radar and warship units on spawn.
 
 - **Over-The-Horizon Naval Bombardment:**
-  - Long-range engagement up to 120km without direct line-of-sight requirements for heavy naval cannons and railguns.
+  - Long-range engagement without direct line-of-sight requirements for heavy naval cannons and railguns.
   - Unified 2000 m/s exit velocity for ship-launched guided shells and bombardment cannons.
-  - Dynamic 45-degree high-angle elevation capping for guided shells (< 100mm) engaging beyond 50km for maximum ballistic reach.
-  - Caliber filtering (>= 100mm) ensuring heavy land artillery (SPGs) receives long-range capabilities while medium calibre remain vanilla.
+  - Dynamic 45-degree high-angle elevation capping for guided shells engaging at long range for maximum ballistic reach.
+  - Caliber filtering ensuring heavy land artillery (SPGs) receives long-range capabilities while light mortars remain standard.
+  - Surface priority gating to keep heavy bombardment turrets locked on warships and land installations rather than wasting rounds on incoming missiles.
+  - Extended bullet self-destruct timers for long-range flight.
 
-- **Smart SAM Defense & Exact Quota Ripple Salvo:**
-  - **3-Slot Seeker Discrimination:** Enforces independent Fox 1 (SARH), Fox 2 (IR), and Fox 3 (ARH) seeker slots per target. Prevents redundant missile dumping of the same seeker type.
-  - **Self & Buddy Point Defense Trigger:** Emergency salvo multilock only activates if incoming missiles threaten the platform or an allied surface unit within 100m. Aerial engagements remain 100% vanilla.
-  - **Exact Quota Ripple Fire:** Dynamically counts incoming threats ($N$) and fires exactly $N$ interceptors sequentially at 0.25s cadence. Firing immediately halts once all threats are engaged, preserving ammunition.
-  - **Anti-Daisy-Chain Guardrails:** Pure anti-air interceptors are excluded from trajectory checks, preventing opposing SAM sites from triggering mutual missile-wasting duels.
+- **Smart SAM Defense:**
+  - **3-Slot Seeker Discrimination:** Enforces independent Fox 1 (SARH), Fox 2 (IR), and Fox 3 (ARH) seeker slots per target. Prevents redundant missile dumping of the same seeker type while allowing mixed-seeker salvos.
+  - **Force Change Target:** Never blocks the launcher trigger. When a target is already engaged or quota is met, the turret automatically forces a target change to another valid target.
+  - **Self & Buddy Point Defense Trigger:** Emergency salvo multilock only activates if incoming missiles threaten the platform or an allied surface unit within a configurable radius (separate thresholds for ships vs. ground vehicles/buildings). Aerial and peacetime engagements remain 100% vanilla.
+  - **Adjustable Salvo Interval & Threat Re-engagement Cooldown:** Interceptor replacement rate and per-threat re-engagement cooldown are both configurable, giving direct control over cumulative ammunition expenditure.
+  - **Independent SARH (Fox 1) Cadence:** SARH turrets are handled entirely independently, with their own rate of fire.
+  - **Independent CIWS Range & Reaction-Time Buff:** CIWS point-defense guns get their own unconditional engagement-range and lock/assessment-cadence buff.
+
+- **ARH (Active Radar Homing) Buff:**
+  - Softens the ground-clutter signal penalty on ARH seekers that causes lock loss against low-altitude targets.
+  - Extends the terminal homing range at which an ARH missile switches from datalink guidance to active radar terminal homing.
